@@ -27,13 +27,18 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 		false,
 		"",
 	}
-	if validateCommmitId(commitId) {
-		testResult = runTestsAndGetResult(commitId)
-	} else {
+	if !validateCanTest(r) {
+		testResult = TestResult {
+			false,
+			"Cannot test at this time",
+		}
+	} else if !validateCommmitId(commitId) {
 		testResult = TestResult {
 			false,
 			"Invalid commit id",
 		}
+	} else {
+		testResult = runTestsAndGetResult(commitId)		
 	}
     w.Header().Set("Content-Type", "application/json")
 	jsonBytes, err := json.Marshal(testResult)
@@ -45,6 +50,11 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonBytes)
 }
 
+func validateCanTest(r *http.Request) bool {
+	testerToken := r.Header.Get("Tester-Token")
+	return testerToken == "test"
+}
+
 func runTestsAndGetResult(commitId string) TestResult {
 	fmt.Println("Running tests for commit id:", commitId)
 
@@ -54,6 +64,7 @@ func runTestsAndGetResult(commitId string) TestResult {
 	deleteFolder(folderName)
 	return testResult
 }
+
 
 func validateCommmitId(commitId string) bool {
 	out, err := exec.Command("bash", "-c", "git cat-file commit " + commitId).Output()
