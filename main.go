@@ -9,15 +9,20 @@ import(
 	"encoding/json"
 	"log"
 	"net/http"
+	"github.com/joho/godotenv"
 )
 
+
 var isRunningOnGpu bool = false
-var testToken string = "test"
+var testToken string = "test_token"
 var port string = "9000"
 
 
 func main() {
 	fmt.Println("Test server starting on http://127.0.0.1:" + port)
+
+	godotenv.Load()
+	testToken = os.Getenv("TEST_TOKEN")
 	// Define routes
     http.HandleFunc("/api/sim", homeFunc)
     http.HandleFunc("/api/sim/test/{commitId}/commit", testFunc)
@@ -42,20 +47,23 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	if !validateCanTest(r) {
 		testResult = TestResult {
 			false,
-			"Cannot test at this time",
+			"Authorization failed",
 		}
-	}
-
-	fmt.Println("Running tests for commit id:", commitId)
-
-	folderName := pullDownCode()
-	if !validateCommmitId(commitId, folderName) {
-		testResult = TestResult {
-			false,
-			"Invalid commit id",
-		}
+		w.WriteHeader(http.StatusUnauthorized)
 	} else {
-		testResult = runTestsAndGetResult(folderName)		
+		fmt.Println("Running tests for commit id:", commitId)
+
+		folderName := pullDownCode()
+		if !validateCommmitId(commitId, folderName) {
+			testResult = TestResult {
+				false,
+				"Invalid commit id",
+			}
+			w.WriteHeader(http.StatusBadRequest)
+		} else {
+			testResult = runTestsAndGetResult(folderName)	
+			w.WriteHeader(http.StatusOK)	
+		}
 	}
     w.Header().Set("Content-Type", "application/json")
 	jsonBytes, err := json.Marshal(testResult)
@@ -63,7 +71,6 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error marshalling json: %s", err)
 	}
 	fmt.Println(testResult)
-	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
 
