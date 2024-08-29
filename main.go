@@ -23,6 +23,7 @@ func main() {
 
 	godotenv.Load()
 	testToken = os.Getenv("TEST_TOKEN")
+	isRunningOnGpu = os.Getenv("IS_RUNNING_GPU") == "true"
 	// Define routes
     http.HandleFunc("/api/sim", homeFunc)
     http.HandleFunc("/api/sim/test/{commitId}/commit", testFunc)
@@ -68,7 +69,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
 	jsonBytes, err := json.Marshal(testResult)
 	if err != nil {
-		fmt.Println("Error marshalling json: %s", err)
+		fmt.Println("Error marshalling json:", err)
 	}
 	fmt.Println(testResult)
 	w.Write(jsonBytes)
