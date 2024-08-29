@@ -94,9 +94,13 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
+	if !validateCanTest(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Invalid token"))
+		return
+	}
 	testResultId := r.PathValue("testResultId")
 	testResult, ok := resultsMap[testResultId]
-	// if test result is nil
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Test result not found"))

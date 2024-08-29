@@ -2,7 +2,14 @@
 go run main.go &
 
 # Call server CMD
-curl localhost:9000/api/test/cf62d31e25ba3743e357d93ad3669ff2b8f944bd/commit
+## Get Home
+curl localhost:9000/api/sim
+
+## Start runner
+curl localhost:9000/api/sim/test/cf62d31e25ba3743e357d93ad3669ff2b8f944bd/commit
+
+## Get result
+curl localhost:9000/api/sim/test/{testResultId}/result
 
 # Always running server
 ## Ubuntu
