@@ -42,41 +42,40 @@ func homeFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 func testFunc(w http.ResponseWriter, r *http.Request) {
+	removeExpiredResults()
+	
 	commitId := r.PathValue("commitId")
 	testResult := TestResult{
 		false,
 		false,
 		"",
+		getExpiryEpochSeconds(),
 	}
-	testResultId := strconv.FormatInt(time.Now().Unix(), 10)
+	if !validateCanTest(r) {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("Invalid token"))
+		return
+	}
+	testResultId := strconv.FormatInt(time.Now().UnixMilli(), 16)
 	resultsMap[testResultId] = testResult
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(testResultId))
 	go func() {
-		// Do anything here, this won't delay the response
-		// But don't touch the writer or request, as they may not be available here
-		if !validateCanTest(r) {
+		fmt.Println("Running tests for commit id:", commitId)
+
+		folderName := pullDownCode()
+		if !validateCommmitId(commitId, folderName) {
 			testResult = TestResult{
 				true,
 				false,
-				"Authorization failed",
+				"Invalid commit id",
+				getExpiryEpochSeconds(),
 			}
-			resultsMap[testResultId] = testResult
 		} else {
-			fmt.Println("Running tests for commit id:", commitId)
-
-			folderName := pullDownCode()
-			if !validateCommmitId(commitId, folderName) {
-				testResult = TestResult{
-					true,
-					false,
-					"Invalid commit id",
-				}
-			} else {
-				testResult = runTestsAndGetResult(folderName)
-			}
-			resultsMap[testResultId] = testResult
+			testResult = runTestsAndGetResult(folderName)
 		}
+		resultsMap[testResultId] = testResult
+		fmt.Println(testResult)
 	}()
 }
 
@@ -95,10 +94,10 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("Error marshalling json:", err)
 		}
-		fmt.Println(testResult)
 		w.Write(jsonBytes)
 		if testResult.IsReady {
 			delete(resultsMap, testResultId)
+			fmt.Println("Deleted retrieved test result: ", testResultId)
 		}
 	}
 }
@@ -162,6 +161,7 @@ func runTests(folderName string) TestResult {
 		true,
 		isSuccess,
 		testMessage,
+		getExpiryEpochSeconds(),
 	}
 }
 
@@ -172,8 +172,22 @@ func deleteFolder(folderName string) {
 	}
 }
 
+func getExpiryEpochSeconds() int64 {
+	return time.Now().Add(2 * time.Hour).Unix()
+}
+
+func removeExpiredResults() {
+	for key, value := range resultsMap {
+		if value.expiryEpochSeconds < time.Now().Unix() {
+			delete(resultsMap, key)
+			fmt.Println("Deleted expired test result: ", key)
+		}
+	}
+}
+
 type TestResult struct {
 	IsReady   bool   `json:"isReady"`
 	IsSuccess bool   `json:"isSuccess"`
 	Message   string `json:"message"`
+	expiryEpochSeconds    int64
 }
