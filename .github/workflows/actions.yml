@@ -9,23 +9,9 @@ jobs:
           fail-fast: false
           matrix:
             include:
-              - os: ubuntu-20.04
-                INSTALL_SHELL: bash
-                INSTALL_SCRIPT: ubuntu.sh
-              - os: macos-latest
-                INSTALL_SHELL: bash
-                INSTALL_SCRIPT: macos.sh
-              - os: windows-2019
-                INSTALL_SHELL: powershell
-                INSTALL_SCRIPT: windows.ps1
-        defaults:
-          run:
-            shell: ${{ matrix.INSTALL_SHELL }}
+              - os: ubuntu-latest
         steps:
         - uses: actions/checkout@v2
-
-        # - name: Install Go
-        # run: ./scripts/installation/install_go_${{ matrix.INSTALL_SCRIPT }}
 
         - name: Build
           shell: bash
