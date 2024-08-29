@@ -21,11 +21,14 @@ var port string = "9000"
 var resultsMap map[string]TestResult = make(map[string]TestResult)
 
 func main() {
-	fmt.Println("Test server starting on http://127.0.0.1:" + port)
-
 	godotenv.Load()
 	testToken = os.Getenv("TEST_TOKEN")
 	isRunningOnGpu = os.Getenv("IS_RUNNING_GPU") == "true"
+	port = os.Getenv("PORT")
+
+	fmt.Println("Test server starting on http://127.0.0.1:" + port)
+	deleteFolderInTestArea("*")
+
 	// Define routes
 	http.HandleFunc("/api/sim", homeFunc)
 	http.HandleFunc("/api/sim/test/{commitId}/commit", testFunc)
@@ -133,7 +136,7 @@ func runTestsAndGetResult(folderName string) (TestResult, error) {
 	}
 
 	testResult, err := runTests(folderName)
-	deleteFolder(folderName)
+	deleteFolderInTestArea(folderName)
 	return testResult, err
 }
 
@@ -154,7 +157,7 @@ func validateCommmitId(commitId string, folderName string) bool {
 
 func pullDownCode() (string, error) {
 	// Todo: get the timestamp
-	folderName := strconv.FormatInt(time.Now().Unix(), 10)
+	folderName := getFolderName()
 	err := os.Mkdir("test_area/"+folderName, os.ModePerm)
 	if err != nil {
 		fmt.Println("Error creating folder: ", err)
@@ -167,6 +170,10 @@ func pullDownCode() (string, error) {
 		return "", errors.New("error cloning repo: " + err.Error())
 	}
 	return folderName, nil
+}
+
+func getFolderName() string {
+	return strconv.FormatInt(time.Now().UnixMicro(), 16)
 }
 
 func runTests(folderName string) (TestResult, error) {
@@ -184,11 +191,12 @@ func runTests(folderName string) (TestResult, error) {
 	}, nil
 }
 
-func deleteFolder(folderName string) {
+func deleteFolderInTestArea(folderName string) {
 	out, err := exec.Command("bash", "-c", "rm -rf test_area/"+folderName).Output()
 	if err != nil {
-		fmt.Println("Error deleting folder: ", out, err)
+		fmt.Println("Error deleting folder(s): ", out, err)
 	}
+	fmt.Println("Deleted folder(s): test_area/" + folderName)
 }
 
 func getExpiryEpochSeconds() int64 {
