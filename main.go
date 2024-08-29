@@ -89,7 +89,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		resultsMap[testResultId] = testResult
-		fmt.Println(testResult)
+		fmt.Println("Result generated, isSuccess: ", testResult.IsSuccess)
 	}()
 }
 
