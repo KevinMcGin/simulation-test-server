@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
+	"errors"
 
 	"github.com/joho/godotenv"
 )
@@ -47,7 +48,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	commitId := r.PathValue("commitId")
 	testResult := TestResult{
 		false,
-		false,
+		true,
 		"",
 		getExpiryEpochSeconds(),
 	}
@@ -63,8 +64,10 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		fmt.Println("Running tests for commit id:", commitId)
 
-		folderName := pullDownCode()
-		if !validateCommmitId(commitId, folderName) {
+		folderName, err := pullDownCode()
+		if err != nil {
+			// covered by error check below
+		} else if !validateCommmitId(commitId, folderName) {
 			testResult = TestResult{
 				true,
 				false,
@@ -72,7 +75,15 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 				getExpiryEpochSeconds(),
 			}
 		} else {
-			testResult = runTestsAndGetResult(folderName)
+			testResult, err = runTestsAndGetResult(folderName)
+		}
+		if err != nil {
+			testResult = TestResult{
+				false,
+				true,
+				err.Error(),
+				getExpiryEpochSeconds(),
+			}
 		}
 		resultsMap[testResultId] = testResult
 		fmt.Println(testResult)
@@ -107,17 +118,23 @@ func validateCanTest(r *http.Request) bool {
 	return testerToken == testToken
 }
 
-func runTestsAndGetResult(folderName string) TestResult {
+func runTestsAndGetResult(folderName string) (TestResult, error) {
 	if isRunningOnGpu {
 		out, err := exec.Command("bash", "-c", "cd test_area/"+folderName+"/Simulation && rm config/project.config.example && mv config/gpu_project.config.example config/project.config.example").Output()
 		if err != nil {
 			fmt.Println("Error renaming project.config: ", out, err)
+			return TestResult{
+				true,
+				false,
+				"Error renaming project.config",
+				getExpiryEpochSeconds(),
+			}, errors.New("error renaming project.config: " + err.Error())
 		}
 	}
 
-	testResult := runTests(folderName)
+	testResult, err := runTests(folderName)
 	deleteFolder(folderName)
-	return testResult
+	return testResult, err
 }
 
 func validateCommmitId(commitId string, folderName string) bool {
@@ -135,22 +152,24 @@ func validateCommmitId(commitId string, folderName string) bool {
 	return err == nil
 }
 
-func pullDownCode() string {
+func pullDownCode() (string, error) {
 	// Todo: get the timestamp
 	folderName := strconv.FormatInt(time.Now().Unix(), 10)
 	err := os.Mkdir("test_area/"+folderName, os.ModePerm)
 	if err != nil {
 		fmt.Println("Error creating folder: ", err)
 		fmt.Println(err)
+		return "", errors.New("error creating folder: " + err.Error())
 	}
 	out, err := exec.Command("bash", "-c", "cd test_area/"+folderName+" && git clone https://github.com/KevinMcGin/Simulation.git").Output()
 	if err != nil {
 		fmt.Println("Error cloning repo: ", out, err)
+		return "", errors.New("error cloning repo: " + err.Error())
 	}
-	return folderName
+	return folderName, nil
 }
 
-func runTests(folderName string) TestResult {
+func runTests(folderName string) (TestResult, error) {
 	out, err := exec.Command("bash", "-c", "cd test_area/"+folderName+"/Simulation/scripts && ./test.sh").Output()
 	isSuccess := err == nil
 	if !isSuccess {
@@ -162,7 +181,7 @@ func runTests(folderName string) TestResult {
 		isSuccess,
 		testMessage,
 		getExpiryEpochSeconds(),
-	}
+	}, nil
 }
 
 func deleteFolder(folderName string) {
