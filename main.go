@@ -94,20 +94,40 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	if !validateCanTest(r) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Invalid token"))
+		testResult := TestResult{
+			true,
+			false,
+			"Invalid token",
+			0,
+		}
+		jsonBytes, err := json.Marshal(testResult)
+		if err != nil {
+			fmt.Println("Error marshalling json:", err)
+		}
+		w.Write(jsonBytes)
 		return
 	}
 	testResultId := r.PathValue("testResultId")
 	testResult, ok := resultsMap[testResultId]
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Test result not found"))
+		testResult = TestResult{
+			true,
+			false,
+			"Test result not found",
+			0,
+		}
+		jsonBytes, err := json.Marshal(testResult)
+		if err != nil {
+			fmt.Println("Error marshalling json:", err)
+		}
+		w.Write(jsonBytes)
 		return
 	} else {
 		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "application/json")
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
 			fmt.Println("Error marshalling json:", err)
@@ -118,6 +138,8 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Deleted retrieved test result: ", testResultId)
 		}
 	}
+	jsonBytes, _ := json.Marshal(testResult)
+	w.Write(jsonBytes)
 }
 
 func validateCanTest(r *http.Request) bool {
