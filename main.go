@@ -59,7 +59,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	}
 	if !validateCanTest(r) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Invalid token"))
+		w.Write([]byte("error: invalid token"))
 		return
 	}
 	testResultId := strconv.FormatInt(time.Now().UnixMilli(), 16)
@@ -107,7 +107,9 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
-			fmt.Println("Error marshalling json:", err)
+			fmt.Println("error marshalling json:", err)
+			w.Write([]byte("error marshalling json"))
+			return
 		}
 		w.Write(jsonBytes)
 		return
@@ -125,6 +127,8 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
 			fmt.Println("Error marshalling json:", err)
+			w.Write([]byte("error marshalling json"))
+			return
 		}
 		w.Write(jsonBytes)
 		return
@@ -133,6 +137,8 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
 			fmt.Println("Error marshalling json:", err)
+			w.Write([]byte("error marshalling json"))
+			return
 		}
 		w.Write(jsonBytes)
 		if testResult.IsReady {
