@@ -17,6 +17,7 @@ import (
 var isRunningOnGpu bool = false
 var testToken string = "test_token"
 var port string = "9000"
+var testAreaDirectory string = "test-area"
 
 var resultsMap map[string]TestResult = make(map[string]TestResult)
 
@@ -25,6 +26,7 @@ func main() {
 	testToken = os.Getenv("TEST_TOKEN")
 	isRunningOnGpu = os.Getenv("IS_RUNNING_GPU") == "true"
 	port = os.Getenv("PORT")
+	testAreaDirectory = os.Getenv("TEST_AREA")
 
 	fmt.Println("Test server starting on http://127.0.0.1:" + port)
 	deleteFolderInTestArea("*")
@@ -149,7 +151,7 @@ func validateCanTest(r *http.Request) bool {
 
 func runTestsAndGetResult(folderName string) (TestResult, error) {
 	if isRunningOnGpu {
-		out, err := exec.Command("bash", "-c", "cd test_area/"+folderName+"/Simulation && rm config/project.config.example && mv config/gpu_project.config.example config/project.config.example").Output()
+		out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && rm config/project.config.example && mv config/gpu_project.config.example config/project.config.example").Output()
 		if err != nil {
 			fmt.Println("Error renaming project.config: ", out, err)
 			return TestResult{
@@ -167,13 +169,13 @@ func runTestsAndGetResult(folderName string) (TestResult, error) {
 }
 
 func validateCommmitId(commitId string, folderName string) bool {
-	out, err := exec.Command("bash", "-c", "cd test_area/"+folderName+"/Simulation && git cat-file commit "+commitId).Output()
+	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && git cat-file commit " + commitId).Output()
 	if err != nil {
 		fmt.Println("Error validating commit: ", commitId, " ", out, err)
 		fmt.Println(err)
 	}
 	if err != nil {
-		out, err = exec.Command("bash", "-c", "cd test_area/"+folderName+"/Simulation && git checkout "+commitId).Output()
+		out, err = exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && git checkout "+commitId).Output()
 		if err != nil {
 			fmt.Println("Error checking out commit: ", out, err)
 		}
@@ -183,14 +185,14 @@ func validateCommmitId(commitId string, folderName string) bool {
 
 func pullDownCode() (string, error) {
 	// Todo: get the timestamp
-	folderName := getFolderName()
-	err := os.Mkdir("test_area/"+folderName, os.ModePerm)
+	folderName := getFolderName() 
+	err := os.Mkdir(testAreaDirectory + "/" + folderName, os.ModePerm)
 	if err != nil {
 		fmt.Println("Error creating folder: ", err)
 		fmt.Println(err)
 		return "", errors.New("error creating folder: " + err.Error())
 	}
-	out, err := exec.Command("bash", "-c", "cd test_area/"+folderName+" && git clone https://github.com/KevinMcGin/Simulation.git").Output()
+	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + " && git clone https://github.com/KevinMcGin/Simulation.git").Output()
 	if err != nil {
 		fmt.Println("Error cloning repo: ", out, err)
 		return "", errors.New("error cloning repo: " + err.Error())
@@ -203,7 +205,7 @@ func getFolderName() string {
 }
 
 func runTests(folderName string) (TestResult, error) {
-	out, err := exec.Command("bash", "-c", "cd test_area/"+folderName+"/Simulation/scripts && ./test.sh").Output()
+	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh").Output()
 	isSuccess := err == nil
 	if !isSuccess {
 		fmt.Println("Tests failed:\n ", err, out)
@@ -218,11 +220,11 @@ func runTests(folderName string) (TestResult, error) {
 }
 
 func deleteFolderInTestArea(folderName string) {
-	out, err := exec.Command("bash", "-c", "rm -rf test_area/"+folderName).Output()
+	out, err := exec.Command("bash", "-c", "rm -rf" + testAreaDirectory + "/" + folderName).Output()
 	if err != nil {
 		fmt.Println("Error deleting folder(s): ", out, err)
 	}
-	fmt.Println("Deleted folder(s): test_area/" + folderName)
+	fmt.Println("Deleted folder(s): " + testAreaDirectory + "/" + folderName)
 }
 
 func getExpiryEpochSeconds() int64 {
