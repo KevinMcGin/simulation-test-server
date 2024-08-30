@@ -2,3 +2,4 @@ sim_test_server.bat
 main.exe
 main
 .env
+sim_test_Server.ps1
