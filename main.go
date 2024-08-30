@@ -14,10 +14,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var isRunningOnGpu bool = false
-var testToken string = "test_token"
-var port string = "9000"
-var testAreaDirectory string = "test-area"
+var isRunningOnGpu bool 
+var testToken string
+var port string
+var testAreaDirectory string
 
 var resultsMap map[string]TestResult = make(map[string]TestResult)
 
@@ -53,7 +53,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	commitId := r.PathValue("commitId")
 	testResult := TestResult{
 		false,
-		true,
+		false,
 		"",
 		getExpiryEpochSeconds(),
 	}
@@ -84,8 +84,8 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 		}
 		if err != nil {
 			testResult = TestResult{
-				false,
 				true,
+				false,
 				err.Error(),
 				getExpiryEpochSeconds(),
 			}
@@ -107,7 +107,7 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
-			fmt.Println("error marshalling json:", err)
+			fmt.Println("error marshalling json:", err.Error())
 			w.Write([]byte("error marshalling json"))
 			return
 		}
@@ -126,7 +126,7 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		}
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
-			fmt.Println("Error marshalling json:", err)
+			fmt.Println("Error marshalling json:", err.Error())
 			w.Write([]byte("error marshalling json"))
 			return
 		}
@@ -136,7 +136,7 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
-			fmt.Println("Error marshalling json:", err)
+			fmt.Println("Error marshalling json:", err.Error())
 			w.Write([]byte("error marshalling json"))
 			return
 		}
@@ -159,7 +159,7 @@ func runTestsAndGetResult(folderName string) (TestResult, error) {
 	if isRunningOnGpu {
 		out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && rm config/project.config.example && mv config/gpu_project.config.example config/project.config.example").Output()
 		if err != nil {
-			fmt.Println("Error renaming project.config: ", out, err)
+			fmt.Println("Error renaming project.config: ", string(out), err.Error())
 			return TestResult{
 				true,
 				false,
@@ -177,13 +177,12 @@ func runTestsAndGetResult(folderName string) (TestResult, error) {
 func validateCommmitId(commitId string, folderName string) bool {
 	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && git cat-file commit " + commitId).Output()
 	if err != nil {
-		fmt.Println("Error validating commit: ", commitId, " ", out, err)
-		fmt.Println(err)
+		fmt.Println("Error validating commit: ", commitId, " ", string(out), err.Error())
 	}
 	if err != nil {
 		out, err = exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && git checkout "+commitId).Output()
 		if err != nil {
-			fmt.Println("Error checking out commit: ", out, err)
+			fmt.Println("Error checking out commit: ", string(out), err.Error())
 		}
 	}
 	return err == nil
@@ -194,13 +193,12 @@ func pullDownCode() (string, error) {
 	folderName := getFolderName() 
 	err := os.Mkdir(testAreaDirectory + "/" + folderName, os.ModePerm)
 	if err != nil {
-		fmt.Println("Error creating folder: ", err)
-		fmt.Println(err)
+		fmt.Println("Error creating folder: ", err.Error())
 		return "", errors.New("error creating folder: " + err.Error())
 	}
 	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + " && git clone https://github.com/KevinMcGin/Simulation.git").Output()
 	if err != nil {
-		fmt.Println("Error cloning repo: ", out, err)
+		fmt.Println("Error cloning repo: ", string(out), err.Error())
 		return "", errors.New("error cloning repo: " + err.Error())
 	}
 	return folderName, nil
@@ -228,9 +226,10 @@ func runTests(folderName string) (TestResult, error) {
 func deleteFolderInTestArea(folderName string) {
 	out, err := exec.Command("bash", "-c", "rm -rf" + testAreaDirectory + "/" + folderName).Output()
 	if err != nil {
-		fmt.Println("Error deleting folder(s): ", out, err)
+		fmt.Println("Error deleting folder(s): ", string(out), err.Error())
+	} else {
+		fmt.Println("Deleted folder(s): " + testAreaDirectory + "/" + folderName)
 	}
-	fmt.Println("Deleted folder(s): " + testAreaDirectory + "/" + folderName)
 }
 
 func getExpiryEpochSeconds() int64 {
