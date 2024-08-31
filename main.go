@@ -54,7 +54,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	testResult := TestResult{
 		false,
 		false,
-		"",
+		"Test running",
 		getExpiryEpochSeconds(),
 	}
 	if !validateCanTest(r) {
@@ -178,9 +178,8 @@ func validateCommmitId(commitId string, folderName string) bool {
 	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && git cat-file commit " + commitId).Output()
 	if err != nil {
 		fmt.Println("Error validating commit: ", commitId, " ", string(out), err.Error())
-	}
-	if err != nil {
-		out, err = exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && git checkout "+commitId).Output()
+	} else {
+		out, err = exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && git checkout " + commitId).Output()
 		if err != nil {
 			fmt.Println("Error checking out commit: ", string(out), err.Error())
 		}
@@ -196,7 +195,7 @@ func pullDownCodeAndGetFolderName() (string, error) {
 		fmt.Println("Error creating folder: ", err.Error())
 		return "", errors.New("error creating folder: " + err.Error())
 	}
-	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + " && git clone https://github.com/KevinMcGin/Simulation.git && git fetch").Output()
+	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + " && git clone https://github.com/KevinMcGin/Simulation.git && cd Simulation && git fetch").Output()
 	if err != nil {
 		fmt.Println("Error cloning repo: ", string(out), err.Error())
 		return "", errors.New("error cloning repo: " + err.Error())
