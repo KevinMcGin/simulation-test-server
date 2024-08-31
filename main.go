@@ -91,6 +91,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		resultsMap[testResultId] = testResult
+		deleteFolderInTestArea(folderName)
 		fmt.Println("Result generated, isSuccess: ", testResult.IsSuccess)
 	}()
 }
@@ -170,7 +171,6 @@ func runTestsAndGetResult(folderName string) (TestResult, error) {
 	}
 
 	testResult, err := runTests(folderName)
-	deleteFolderInTestArea(folderName)
 	return testResult, err
 }
 
