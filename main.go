@@ -196,7 +196,7 @@ func pullDownCodeAndGetFolderName() (string, error) {
 		fmt.Println("Error creating folder: ", err.Error())
 		return "", errors.New("error creating folder: " + err.Error())
 	}
-	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + " && git clone https://github.com/KevinMcGin/Simulation.git").Output()
+	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + " && git clone https://github.com/KevinMcGin/Simulation.git && git fetch").Output()
 	if err != nil {
 		fmt.Println("Error cloning repo: ", string(out), err.Error())
 		return "", errors.New("error cloning repo: " + err.Error())
