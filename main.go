@@ -69,7 +69,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		fmt.Println("Running tests for commit id:", commitId)
 
-		folderName, err := pullDownCode()
+		folderName, err := pullDownCodeAndGetFolderName()
 		if err != nil {
 			// covered by error check below
 		} else if !validateCommmitId(commitId, folderName) {
@@ -188,7 +188,7 @@ func validateCommmitId(commitId string, folderName string) bool {
 	return err == nil
 }
 
-func pullDownCode() (string, error) {
+func pullDownCodeAndGetFolderName() (string, error) {
 	// Todo: get the timestamp
 	folderName := getFolderName() 
 	err := os.Mkdir(testAreaDirectory + "/" + folderName, os.ModePerm)
