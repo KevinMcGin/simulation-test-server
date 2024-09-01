@@ -68,33 +68,6 @@ func PullDownCodeAndGetFolderName() (string, error) {
 	return folderName, nil
 }
 
-func getFolderName() string {
-	return strconv.FormatInt(time.Now().UnixMicro(), 16)
-}
-
-func runTests(folderName string) (test_result.TestResult, error) {
-	testAreaDirectory := os.Getenv("TEST_AREA")
-	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh").Output()
-	var testStatus test_result.TestStatus = test_result.Success 
-	if err != nil {
-		fmt.Println("Tests failed:\n ", err, out)
-		testStatus = test_result.Failure
-	}
-	testMessage := string(out)
-	return test_result.TestResult{
-		TestStatus: testStatus,
-		Message: testMessage,
-		ExpiryEpochSeconds: GetExpiryEpochSeconds(),
-	}, nil
-}
-
-func validateDeleteFolderPath(folderPath string) bool {
-	res := strings.Split(folderPath, "/")
-	return len(res) >= 2 && 
-		res[0] == "." &&
-		!strings.Contains(folderPath, "..")
-}
-
 func DeleteFolderInTestArea(folderName string) {
 	testAreaDirectory := os.Getenv("TEST_AREA")
 	folderPath := testAreaDirectory + "/" + folderName
@@ -121,4 +94,31 @@ func RemoveExpiredResults(resultsMap map[string]test_result.TestResult) {
 			fmt.Println("Deleted expired test result: ", key)
 		}
 	}
+}
+
+func getFolderName() string {
+	return strconv.FormatInt(time.Now().UnixMicro(), 16)
+}
+
+func runTests(folderName string) (test_result.TestResult, error) {
+	testAreaDirectory := os.Getenv("TEST_AREA")
+	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh").Output()
+	var testStatus test_result.TestStatus = test_result.Success 
+	if err != nil {
+		fmt.Println("Tests failed:\n ", err, out)
+		testStatus = test_result.Failure
+	}
+	testMessage := string(out)
+	return test_result.TestResult{
+		TestStatus: testStatus,
+		Message: testMessage,
+		ExpiryEpochSeconds: GetExpiryEpochSeconds(),
+	}, nil
+}
+
+func validateDeleteFolderPath(folderPath string) bool {
+	res := strings.Split(folderPath, "/")
+	return len(res) >= 2 && 
+		res[0] == "." &&
+		!strings.Contains(folderPath, "..")
 }
