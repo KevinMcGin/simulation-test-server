@@ -12,6 +12,8 @@ import (
 	"errors"
 	"strings"
 
+	"simulation-test-server/pkg/model/test_result"
+
 	"github.com/joho/godotenv"
 )
 
@@ -20,7 +22,7 @@ var testToken string
 var port string
 var testAreaDirectory string
 
-var resultsMap map[string]TestResult = make(map[string]TestResult)
+var resultsMap map[string]test_result.TestResult = make(map[string]test_result.TestResult)
 
 func main() {
 	godotenv.Load()
@@ -56,10 +58,10 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	removeExpiredResults()
 	
 	commitId := r.PathValue("commitId")
-	testResult := TestResult{
-		"RUNNING",
-		"Test running",
-		getExpiryEpochSeconds(),
+	testResult := test_result.TestResult{
+		TestStatus: test_result.Running,
+		Message: "Test running",
+		ExpiryEpochSeconds: getExpiryEpochSeconds(),
 	}
 	if !validateCanTest(r) {
 		w.WriteHeader(http.StatusUnauthorized)
@@ -77,19 +79,19 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// covered by error check below
 		} else if !validateCommmitId(commitId, folderName) {
-			testResult = TestResult{
-				"ERRORED",
-				"Invalid commit id",
-				getExpiryEpochSeconds(),
+			testResult = test_result.TestResult{
+				TestStatus: test_result.Errored,
+				Message: "Invalid commit id",
+				ExpiryEpochSeconds: getExpiryEpochSeconds(),
 			}
 		} else {
 			testResult, err = runTestsAndGetResult(folderName)
 		}
 		if err != nil {
-			testResult = TestResult{
-				"ERRORED",
-				err.Error(),
-				getExpiryEpochSeconds(),
+			testResult = test_result.TestResult{
+				TestStatus: test_result.Errored,
+				Message: err.Error(),
+				ExpiryEpochSeconds: getExpiryEpochSeconds(),
 			}
 		}
 		resultsMap[testResultId] = testResult
@@ -102,10 +104,10 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if !validateCanTest(r) {
 		w.WriteHeader(http.StatusUnauthorized)
-		testResult := TestResult{
-			"ERRORED",
-			"Invalid token",
-			0,
+		testResult := test_result.TestResult{
+			TestStatus: test_result.Errored,
+			Message: "Invalid token",
+			ExpiryEpochSeconds: 0,
 		}
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
@@ -120,10 +122,10 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 	testResult, ok := resultsMap[testResultId]
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
-		testResult = TestResult{
-			"ERRORED",
-			"Test result not found",
-			0,
+		testResult = test_result.TestResult{
+			TestStatus: test_result.Errored,
+			Message: "Test result not found",
+			ExpiryEpochSeconds: 0,
 		}
 		jsonBytes, err := json.Marshal(testResult)
 		if err != nil {
@@ -135,7 +137,7 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		w.WriteHeader(http.StatusOK)
-		if testResult.TestStatus != "RUNNING" {
+		if testResult.TestStatus != test_result.Running {
 			delete(resultsMap, testResultId)
 			fmt.Println("Deleted retrieved test result: ", testResultId)
 		}
@@ -154,15 +156,15 @@ func validateCanTest(r *http.Request) bool {
 	return testerToken == testToken
 }
 
-func runTestsAndGetResult(folderName string) (TestResult, error) {
+func runTestsAndGetResult(folderName string) (test_result.TestResult, error) {
 	if isRunningOnGpu {
 		out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && rm config/project.config.example && mv config/gpu_project.config.example config/project.config.example").Output()
 		if err != nil {
 			fmt.Println("Error renaming project.config: ", string(out), err.Error())
-			return TestResult{
-				"ERRORED",
-				"Error renaming project.config",
-				getExpiryEpochSeconds(),
+			return test_result.TestResult{
+				TestStatus: test_result.Errored,
+				Message: "Error renaming project.config",
+				ExpiryEpochSeconds: getExpiryEpochSeconds(),
 			}, errors.New("error renaming project.config: " + err.Error())
 		}
 	}
@@ -204,18 +206,18 @@ func getFolderName() string {
 	return strconv.FormatInt(time.Now().UnixMicro(), 16)
 }
 
-func runTests(folderName string) (TestResult, error) {
+func runTests(folderName string) (test_result.TestResult, error) {
 	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh").Output()
-	var testStatus TestStatus = "SUCCESS" 
+	var testStatus test_result.TestStatus = test_result.Success 
 	if err != nil {
 		fmt.Println("Tests failed:\n ", err, out)
-		testStatus = "FAILURE"
+		testStatus = test_result.Failure
 	}
 	testMessage := string(out)
-	return TestResult{
-		testStatus,
-		testMessage,
-		getExpiryEpochSeconds(),
+	return test_result.TestResult{
+		TestStatus: testStatus,
+		Message: testMessage,
+		ExpiryEpochSeconds: getExpiryEpochSeconds(),
 	}, nil
 }
 
@@ -246,24 +248,13 @@ func getExpiryEpochSeconds() int64 {
 
 func removeExpiredResults() {
 	for key, value := range resultsMap {
-		if value.expiryEpochSeconds < time.Now().Unix() {
+		if value.ExpiryEpochSeconds < time.Now().Unix() {
 			delete(resultsMap, key)
 			fmt.Println("Deleted expired test result: ", key)
 		}
 	}
 }
 
-type TestStatus string
 
-const (
-    running TestStatus = "RUNNING"
-    success TestStatus = "SUCCESS"
-    failure TestStatus = "FAILURE"
-    errored TestStatus = "ERRORED"
-)
 
-type TestResult struct {
-	TestStatus 			TestStatus 	`json:"testStatus"`
-	Message 			string 		`json:"message"`
-	expiryEpochSeconds 	int64
-}
+
