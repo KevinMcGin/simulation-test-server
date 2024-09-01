@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 	"errors"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -52,8 +53,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	
 	commitId := r.PathValue("commitId")
 	testResult := TestResult{
-		false,
-		false,
+		"RUNNING",
 		"Test running",
 		getExpiryEpochSeconds(),
 	}
@@ -74,8 +74,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 			// covered by error check below
 		} else if !validateCommmitId(commitId, folderName) {
 			testResult = TestResult{
-				true,
-				false,
+				"ERRORED",
 				"Invalid commit id",
 				getExpiryEpochSeconds(),
 			}
@@ -84,15 +83,14 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 		}
 		if err != nil {
 			testResult = TestResult{
-				true,
-				false,
+				"ERRORED",
 				err.Error(),
 				getExpiryEpochSeconds(),
 			}
 		}
 		resultsMap[testResultId] = testResult
 		deleteFolderInTestArea(folderName)
-		fmt.Println("Result generated, isSuccess: ", testResult.IsSuccess)
+		fmt.Println("Result generated, isSuccess: ", testResult.TestStatus)
 	}()
 }
 
@@ -101,8 +99,7 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 	if !validateCanTest(r) {
 		w.WriteHeader(http.StatusUnauthorized)
 		testResult := TestResult{
-			true,
-			false,
+			"ERRORED",
 			"Invalid token",
 			0,
 		}
@@ -120,8 +117,7 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		testResult = TestResult{
-			true,
-			false,
+			"ERRORED",
 			"Test result not found",
 			0,
 		}
@@ -142,7 +138,7 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write(jsonBytes)
-		if testResult.IsReady {
+		if testResult.TestStatus != "RUNNING" {
 			delete(resultsMap, testResultId)
 			fmt.Println("Deleted retrieved test result: ", testResultId)
 		}
@@ -162,8 +158,7 @@ func runTestsAndGetResult(folderName string) (TestResult, error) {
 		if err != nil {
 			fmt.Println("Error renaming project.config: ", string(out), err.Error())
 			return TestResult{
-				true,
-				false,
+				"ERRORED",
 				"Error renaming project.config",
 				getExpiryEpochSeconds(),
 			}, errors.New("error renaming project.config: " + err.Error())
@@ -209,25 +204,38 @@ func getFolderName() string {
 
 func runTests(folderName string) (TestResult, error) {
 	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh").Output()
-	isSuccess := err == nil
-	if !isSuccess {
+	var testStatus TestStatus = "SUCCESS" 
+	if err != nil {
 		fmt.Println("Tests failed:\n ", err, out)
+		testStatus = "FAILURE"
 	}
 	testMessage := string(out)
 	return TestResult{
-		true,
-		isSuccess,
+		testStatus,
 		testMessage,
 		getExpiryEpochSeconds(),
 	}, nil
 }
 
+func validateDeleteFolderPath(folderPath string) bool {
+	res := strings.Split(folderPath, "/")
+	if len(res) < 4 {
+		return false
+	}
+	return true
+}
+
 func deleteFolderInTestArea(folderName string) {
-	out, err := exec.Command("bash", "-c", "rm -rf" + testAreaDirectory + "/" + folderName).Output()
+	folderPath := testAreaDirectory + "/" + folderName
+	if !validateDeleteFolderPath(folderPath) {
+		fmt.Println("Invalid folder path: ", folderPath)
+		return
+	}
+	out, err := exec.Command("bash", "-c", "rm -rf" + folderPath).Output()
 	if err != nil {
-		fmt.Println("Error deleting folder(s): ", string(out), err.Error())
+		fmt.Println("Error deleting folder(s): " + folderPath, string(out), err.Error())
 	} else {
-		fmt.Println("Deleted folder(s): " + testAreaDirectory + "/" + folderName)
+		fmt.Println("Deleted folder(s): " + folderPath)
 	}
 }
 
@@ -244,9 +252,17 @@ func removeExpiredResults() {
 	}
 }
 
+type TestStatus string
+
+const (
+    running TestStatus = "RUNNING"
+    success TestStatus = "SUCCESS"
+    failure TestStatus = "FAILURE"
+    errored TestStatus = "ERRORED"
+)
+
 type TestResult struct {
-	IsReady   bool   `json:"isReady"`
-	IsSuccess bool   `json:"isSuccess"`
-	Message   string `json:"message"`
-	expiryEpochSeconds    int64
+	TestStatus 			TestStatus 	`json:"testStatus"`
+	Message 			string 		`json:"message"`
+	expiryEpochSeconds 	int64
 }
