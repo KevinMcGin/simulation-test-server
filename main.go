@@ -30,7 +30,11 @@ func main() {
 	testAreaDirectory = os.Getenv("TEST_AREA")
 
 	fmt.Println("Test server starting on http://127.0.0.1:" + port)
-	deleteFolderInTestArea("*")
+	deleteFolderInTestArea("")
+	err := os.Mkdir(testAreaDirectory, os.ModePerm)
+	if err != nil {
+		fmt.Println("Error creating test area directory: ", err.Error())
+	}
 
 	// Define routes
 	http.HandleFunc("/api/sim", homeFunc)
@@ -131,19 +135,17 @@ func getTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		w.WriteHeader(http.StatusOK)
-		jsonBytes, err := json.Marshal(testResult)
-		if err != nil {
-			fmt.Println("Error marshalling json:", err.Error())
-			w.Write([]byte("error marshalling json"))
-			return
-		}
-		w.Write(jsonBytes)
 		if testResult.TestStatus != "RUNNING" {
 			delete(resultsMap, testResultId)
 			fmt.Println("Deleted retrieved test result: ", testResultId)
 		}
 	}
-	jsonBytes, _ := json.Marshal(testResult)
+	jsonBytes, err := json.Marshal(testResult)
+	if err != nil {
+		fmt.Println("Error marshalling json:", err.Error())
+		w.Write([]byte("error marshalling json"))
+		return
+	}
 	w.Write(jsonBytes)
 }
 
@@ -219,10 +221,9 @@ func runTests(folderName string) (TestResult, error) {
 
 func validateDeleteFolderPath(folderPath string) bool {
 	res := strings.Split(folderPath, "/")
-	if len(res) < 4 {
-		return false
-	}
-	return true
+	return len(res) >= 2 && 
+		res[0] == "." &&
+		!strings.Contains(folderPath, "..")
 }
 
 func deleteFolderInTestArea(folderName string) {
@@ -231,9 +232,9 @@ func deleteFolderInTestArea(folderName string) {
 		fmt.Println("Invalid folder path: ", folderPath)
 		return
 	}
-	out, err := exec.Command("bash", "-c", "rm -rf" + folderPath).Output()
+	err := os.RemoveAll(folderPath)
 	if err != nil {
-		fmt.Println("Error deleting folder(s): " + folderPath, string(out), err.Error())
+		fmt.Println("Error deleting folder(s): " + folderPath, err.Error())
 	} else {
 		fmt.Println("Deleted folder(s): " + folderPath)
 	}

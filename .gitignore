@@ -3,3 +3,4 @@ main.exe
 main
 .env
 sim_test_Server.ps1
+bin/**
