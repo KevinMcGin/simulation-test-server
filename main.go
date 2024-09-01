@@ -18,12 +18,7 @@ func main() {
 	port := os.Getenv("PORT")
 	testAreaDirectory := os.Getenv("TEST_AREA")
 
-	// Create test area directory
-	controller.DeleteFolderInTestArea("")
-	err := os.Mkdir(testAreaDirectory, os.ModePerm)
-	if err != nil {
-		fmt.Println("Error creating test area directory: ", err.Error())
-	}
+	createTestAreaDirectory(testAreaDirectory)
 
 	// Define routes
 	http.HandleFunc("/api/sim", controller.HomeFunc)
@@ -33,6 +28,14 @@ func main() {
 	// Start the server
 	fmt.Println("Test server starting on http://127.0.0.1:" + port)
 	log.Fatal(http.ListenAndServe("127.0.0.1:" + port, nil))
+}
+
+func createTestAreaDirectory(testAreaDirectory string) {
+	controller.DeleteFolderInTestArea("")
+	err := os.Mkdir(testAreaDirectory, os.ModePerm)
+	if err != nil {
+		fmt.Println("Error creating test area directory: ", err.Error())
+	}	
 }
 
 
