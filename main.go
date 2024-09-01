@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"simulation-test-server/pkg/controller"
+	"simulation-test-server/pkg/service/test_result_service"
 
 	"github.com/joho/godotenv"
 )
@@ -31,7 +32,7 @@ func main() {
 }
 
 func createTestAreaDirectory(testAreaDirectory string) {
-	controller.DeleteFolderInTestArea("")
+	test_result_service.DeleteFolderInTestArea("")
 	err := os.Mkdir(testAreaDirectory, os.ModePerm)
 	if err != nil {
 		fmt.Println("Error creating test area directory: ", err.Error())

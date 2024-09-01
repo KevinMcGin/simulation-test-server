@@ -1,4 +1,4 @@
-package controller
+package test_result_service
 
 import (
     "testing"
