@@ -118,7 +118,7 @@ func runTests(folderName string) (test_result.TestResult, error) {
 
 func validateDeleteFolderPath(folderPath string) bool {
 	res := strings.Split(folderPath, "/")
-	return len(res) >= 2 && 
+	return len(res) >= 3 && 
 		res[0] == "." &&
 		!strings.Contains(folderPath, "..")
 }
