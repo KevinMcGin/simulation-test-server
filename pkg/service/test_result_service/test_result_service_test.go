@@ -3,6 +3,8 @@ package test_result_service
 import (
     "testing"
     "regexp"
+	"os"
+	"net/http"
 )
 
 // TestHelloName calls greetings.Hello with a name, checking
@@ -48,6 +50,32 @@ func TestValidateDeleteFolderPathInvalidIfNoSlashes(t *testing.T) {
 	valid := validateDeleteFolderPath(folderPath)
 	if valid {
 		t.Fatalf(`validateDeleteFolderPath() = %v; want false`, valid)
+	}
+}
+
+func TestValidateCanTest(t *testing.T) {
+	os.Setenv("TEST_TOKEN", "test")
+	r := &http.Request{
+		Header: http.Header{
+			"Tester-Token": []string{"test"},
+		},
+	}
+	valid := ValidateCanTest(r)
+	if !valid {
+		t.Fatalf(`ValidateCanTest() = %v; want true`, valid)
+	}
+}
+
+func TestValidateCanTestNotIfWrontToken(t *testing.T) {
+	os.Setenv("TEST_TOKEN", "not-test")
+	r := &http.Request{
+		Header: http.Header{
+			"Tester-Token": []string{"test"},
+		},
+	}
+	valid := ValidateCanTest(r)
+	if valid {
+		t.Fatalf(`ValidateCanTest() = %v; want false`, valid)
 	}
 }
 
