@@ -53,6 +53,15 @@ func TestValidateDeleteFolderPathInvalidIfNoSlashes(t *testing.T) {
 	}
 }
 
+func TestValidateDeleteFolderPathInvalidIfDoubleDots(t *testing.T) {
+	testAreaDirectory := "../tmp/test_area"
+	folderPath := testAreaDirectory
+	valid := validateDeleteFolderPath(folderPath)
+	if valid {
+		t.Fatalf(`validateDeleteFolderPath() = %v; want false`, valid)
+	}
+}
+
 func TestValidateCanTest(t *testing.T) {
 	os.Setenv("TEST_TOKEN", "test")
 	r := &http.Request{
