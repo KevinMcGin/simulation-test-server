@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"simulation-test-server/pkg/model/test_result"
+	"simulation-test-server/pkg/model/test_result/test_status"
 )
 
 func ValidateCanTest(r *http.Request) bool {
@@ -27,7 +28,7 @@ func RunTestsAndGetResult(folderName string) (test_result.TestResult, error) {
 		if err != nil {
 			fmt.Println("Error renaming project.config: ", string(out), err.Error())
 			return test_result.TestResult{
-				TestStatus: test_result.Errored,
+				TestStatus: test_status.Errored,
 				Message: "Error renaming project.config",
 				ExpiryEpochSeconds: GetExpiryEpochSeconds(),
 			}, errors.New("error renaming project.config: " + err.Error())
@@ -103,10 +104,10 @@ func getFolderName() string {
 func runTests(folderName string) (test_result.TestResult, error) {
 	testAreaDirectory := os.Getenv("TEST_AREA")
 	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh").Output()
-	var testStatus test_result.TestStatus = test_result.Success 
+	var testStatus test_status.TestStatus = test_status.Success 
 	if err != nil {
 		fmt.Println("Tests failed:\n ", err, out)
-		testStatus = test_result.Failure
+		testStatus = test_status.Failure
 	}
 	testMessage := string(out)
 	return test_result.TestResult{

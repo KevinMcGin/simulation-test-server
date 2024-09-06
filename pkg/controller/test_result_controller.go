@@ -1,6 +1,5 @@
 package controller
 
-
 import (
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"simulation-test-server/pkg/model/test_result"
+	"simulation-test-server/pkg/model/test_result/test_status"
 	"simulation-test-server/pkg/service/test_result_service"
 )
 
@@ -26,7 +26,7 @@ func TestFunc(w http.ResponseWriter, r *http.Request) {
 	
 	commitId := r.PathValue("commitId")
 	testResult := test_result.TestResult{
-		TestStatus: test_result.Running,
+		TestStatus: test_status.Running,
 		Message: "Test running",
 		ExpiryEpochSeconds: test_result_service.GetExpiryEpochSeconds(),
 	}
@@ -47,7 +47,7 @@ func TestFunc(w http.ResponseWriter, r *http.Request) {
 			// covered by error check below
 		} else if !test_result_service.ValidateCommmitId(commitId, folderName) {
 			testResult = test_result.TestResult{
-				TestStatus: test_result.Errored,
+				TestStatus: test_status.Errored,
 				Message: "Invalid commit id",
 				ExpiryEpochSeconds: test_result_service.GetExpiryEpochSeconds(),
 			}
@@ -56,7 +56,7 @@ func TestFunc(w http.ResponseWriter, r *http.Request) {
 		}
 		if err != nil {
 			testResult = test_result.TestResult{
-				TestStatus: test_result.Errored,
+				TestStatus: test_status.Errored,
 				Message: err.Error(),
 				ExpiryEpochSeconds: test_result_service.GetExpiryEpochSeconds(),
 			}
@@ -72,7 +72,7 @@ func GetTestResultFunc(w http.ResponseWriter, r *http.Request) {
 	if !test_result_service.ValidateCanTest(r) {
 		w.WriteHeader(http.StatusUnauthorized)
 		testResult := test_result.TestResult{
-			TestStatus: test_result.Errored,
+			TestStatus: test_status.Errored,
 			Message: "Invalid token",
 			ExpiryEpochSeconds: 0,
 		}
@@ -90,7 +90,7 @@ func GetTestResultFunc(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		testResult = test_result.TestResult{
-			TestStatus: test_result.Errored,
+			TestStatus: test_status.Errored,
 			Message: "Test result not found",
 			ExpiryEpochSeconds: 0,
 		}
@@ -104,7 +104,7 @@ func GetTestResultFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		w.WriteHeader(http.StatusOK)
-		if testResult.TestStatus != test_result.Running {
+		if testResult.TestStatus != test_status.Running {
 			delete(resultsMap, testResultId)
 			fmt.Println("Deleted retrieved test result: ", testResultId)
 		}
