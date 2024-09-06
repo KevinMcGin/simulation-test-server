@@ -75,7 +75,7 @@ func TestValidateCanTest(t *testing.T) {
 	}
 }
 
-func TestValidateCanTestNotIfWrontToken(t *testing.T) {
+func TestValidateCanTestNotIfWrongToken(t *testing.T) {
 	os.Setenv("TEST_TOKEN", "not-test")
 	r := &http.Request{
 		Header: http.Header{
