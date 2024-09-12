@@ -1,16 +1,16 @@
 package test_result_service
 
 import (
-    "testing"
-    "regexp"
-	"os"
 	"net/http"
+	"os"
+	"regexp"
+	"testing"
 )
 
 // TestHelloName calls greetings.Hello with a name, checking
 // for a valid return value.
 func TestGetFolderName(t *testing.T) {
-    folderName := getFolderName()
+	folderName := getFolderName()
 	match, _ := regexp.MatchString("^[0-9a-f]+$", folderName)
 	if !match {
 		t.Fatalf(`getFolderName() = %v; want a string of 0-9a-f`, folderName)
@@ -88,72 +88,78 @@ func TestValidateCanTestNotIfWrongToken(t *testing.T) {
 	}
 }
 
-func TestInValidCommittIfIsASpace(t *testing.T) {
+func TestInValidCommitIfIsASpace(t *testing.T) {
 	valid := ValidateCommmitId(" ", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-func TestInValidCommittIfContainsSpace(t *testing.T) {
+func TestInValidCommitIfContainsSpace(t *testing.T) {
 	valid := ValidateCommmitId("a b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-func TestInValidCommittIfContainsSemiColon(t *testing.T) {
+func TestInValidCommitIfContainsSemiColon(t *testing.T) {
 	valid := ValidateCommmitId("a;b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-func TestInValidCommittIfContainsTilda(t *testing.T) {
+func TestInValidCommitIfContainsTilda(t *testing.T) {
 	valid := ValidateCommmitId("a~b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-func TestInValidCommittIfContainsBackSlash(t *testing.T) {
+func TestInValidCommitIfContainsBackSlash(t *testing.T) {
 	valid := ValidateCommmitId("a\\b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-func TestInValidCommittIfContainsDollarSign(t *testing.T) {
+func TestInValidCommitIfContainsDollarSign(t *testing.T) {
 	valid := ValidateCommmitId("a$b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-func TestInValidCommittIfContainsQuestionMark(t *testing.T) {
+func TestInValidCommitIfContainsQuestionMark(t *testing.T) {
 	valid := ValidateCommmitId("a?b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-func TestInValidCommittIfContainsSingleQuote(t *testing.T) {
+func TestInValidCommitIfContainsSingleQuote(t *testing.T) {
 	valid := ValidateCommmitId("a'b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-
-func TestInValidCommittIfContainsDoubleQuotes(t *testing.T) {
+func TestInValidCommitIfContainsDoubleQuotes(t *testing.T) {
 	valid := ValidateCommmitId("a\"b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
 }
 
-func TestInValidCommittIfContainsMinus(t *testing.T) {
+func TestInValidCommitIfContainsMinus(t *testing.T) {
 	valid := ValidateCommmitId("a-b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommitIfContainsStar(t *testing.T) {
+	valid := ValidateCommmitId("a*b", "folderName")
 	if valid {
 		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
 	}
