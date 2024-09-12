@@ -88,3 +88,73 @@ func TestValidateCanTestNotIfWrongToken(t *testing.T) {
 	}
 }
 
+func TestInValidCommittIfIsASpace(t *testing.T) {
+	valid := ValidateCommmitId(" ", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommittIfContainsSpace(t *testing.T) {
+	valid := ValidateCommmitId("a b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommittIfContainsSemiColon(t *testing.T) {
+	valid := ValidateCommmitId("a;b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommittIfContainsTilda(t *testing.T) {
+	valid := ValidateCommmitId("a~b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommittIfContainsBackSlash(t *testing.T) {
+	valid := ValidateCommmitId("a\\b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommittIfContainsDollarSign(t *testing.T) {
+	valid := ValidateCommmitId("a$b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommittIfContainsQuestionMark(t *testing.T) {
+	valid := ValidateCommmitId("a?b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommittIfContainsSingleQuote(t *testing.T) {
+	valid := ValidateCommmitId("a'b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+
+func TestInValidCommittIfContainsDoubleQuotes(t *testing.T) {
+	valid := ValidateCommmitId("a\"b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}
+
+func TestInValidCommittIfContainsMinus(t *testing.T) {
+	valid := ValidateCommmitId("a-b", "folderName")
+	if valid {
+		t.Fatalf(`ValidateCommmitId() = %v; want false`, valid)
+	}
+}

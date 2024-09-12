@@ -41,6 +41,18 @@ func RunTestsAndGetResult(folderName string) (test_result.TestResult, error) {
 
 func ValidateCommmitId(commitId string, folderName string) bool {
 	testAreaDirectory := os.Getenv("TEST_AREA")
+	invalidateCommitCharacters := []string{
+		"`", "~", "!", "@", "£", "$", "%", "^", "&", "*", "(", ")", "-", "_", "=", "+", " ",
+		"[", "]", "{", "}", "\\", "|", ";", ":", "'", "\"", "<", ">", ",", ".", "/", "?",
+	}
+	if commitId == "" {
+		return false
+	}
+	for _, character := range invalidateCommitCharacters {
+		if strings.Contains(commitId, character) {
+			return false
+		}
+	}
 	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation && git cat-file commit " + commitId).Output()
 	if err != nil {
 		fmt.Println("Error validating commit: ", commitId, " ", string(out), err.Error())
