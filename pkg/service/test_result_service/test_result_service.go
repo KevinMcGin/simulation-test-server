@@ -118,8 +118,8 @@ func runTests(folderName string) (test_result.TestResult, error) {
 	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh -v").Output()
 	testMessage := string(out)
 	var testStatus test_status.TestStatus = test_status.Success 
+	fmt.Println("Tests result:\n ", err, testMessage)
 	if err != nil {
-		fmt.Println("Tests failed:\n ", err, testMessage)
 		testStatus = test_status.Failure
 	}
 	return test_result.TestResult{
