@@ -115,13 +115,13 @@ func getFolderName() string {
 
 func runTests(folderName string) (test_result.TestResult, error) {
 	testAreaDirectory := os.Getenv("TEST_AREA")
-	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh -v").Output()
-	testMessage := string(out)
-	fmt.Println("Tests result:\n ", err, testMessage)
+	out, err := exec.Command("bash", "-c", "cd " + testAreaDirectory + "/" + folderName + "/Simulation/scripts && ./test.sh").Output()
 	var testStatus test_status.TestStatus = test_status.Success 
 	if err != nil {
+		fmt.Println("Tests failed:\n ", err, out)
 		testStatus = test_status.Failure
 	}
+	testMessage := string(out)
 	return test_result.TestResult{
 		TestStatus: testStatus,
 		Message: testMessage,
@@ -130,6 +130,8 @@ func runTests(folderName string) (test_result.TestResult, error) {
 }
 
 func validateDeleteFolderPath(folderPath string) bool {
+	// do checks with pwd
+	// . could be anywhere in the file structure
 	res := strings.Split(folderPath, "/")
 	return len(res) >= 3 && 
 		res[0] == "." &&
